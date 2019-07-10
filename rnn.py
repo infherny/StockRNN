@@ -88,7 +88,7 @@ regressor.fit(X_train, y_train, epochs=100, batch_size=4)
 # testing data
 
 dataset_test = pd.read_csv('hexo_test.csv')
-real_stock_price = dataset_test[["Open"]].values
+real_stock_price = dataset_test[["Open", "Volume", "TSX_Open"]].values
 
 # save
 
@@ -96,25 +96,40 @@ regressor.save_weights('regressor_weight.h5')
 
 # Prediction
 
-dataset_total = pd.concat((dataset_train["Open"], dataset_test["Open"]), axis=0)
-
+dataset_total = pd.concat((dataset_train[["Open", "Volume", "TSX_Open"]],
+                           dataset_test[["Open", "Volume", "TSX_Open"]]), axis=0)
 
 inputs = dataset_total[len(dataset_total) - len(dataset_test) - 60:].values
-inputs = inputs.reshape(-1, 1)
+inputs = inputs.reshape(-1, 3)
 inputs = sc.transform(inputs)
 
 X_test = []
-for i in range(60,  inputs.shape[0]):
-    X_test.append(inputs[(i-60):i, 0])
+for j in range(0, 3):
+    X = []
+    for i in range(60, inputs.shape[0]):
+        X.append(inputs[i-60:i, j])
+    X, np.array(X)
+    X_test.append(X)
 
 X_test = np.array(X_test)
+X_test = np.swapaxes(np.swapaxes(X_test, 0, 1), 1, 2)
 
-X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
 predicted_stock_price = regressor.predict(X_test)
-predicted_stock_price = sc.inverse_transform(predicted_stock_price)
+
+# il faut créer une matrice de transformation bidon
+
+scFirstColunm = MinMaxScaler(feature_range=(0, 1))
+
+training_set_open = dataset_train[["Open"]].values
+training_set_scaled_first_colunm = \
+    scFirstColunm.fit_transform(training_set_open)
+
+predicted_stock_price = scFirstColunm.inverse_transform(predicted_stock_price)
 
 # graph
+
+real_stock_price = dataset_test[["Open"]].values
 
 plt.plot(real_stock_price, color="red", label="real price")
 plt.plot(predicted_stock_price, color="blue", label="predicted price")
