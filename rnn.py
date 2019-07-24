@@ -80,9 +80,7 @@ class StockRNN:
 
     def training(self, training_step, epochs=100, batch_size=5):
 
-        weights = Path("regressor_weight.h5")
-        if weights.is_file():
-            self.model.load_weights('regressor_weight.h5')
+        self.load_weight("regressor_weight.h5")
 
         # boucle d'entrainement
         for i in range(0, training_step):
@@ -93,6 +91,11 @@ class StockRNN:
             time.sleep(60 * 5)
             self.model.load_weights('regressor_weight.h5')
             time.sleep(10)
+
+    def load_weight(self, path):
+        weights = Path(path)
+        if weights.is_file():
+            self.model.load_weights(path)
 
     def generate_plot(self):
 
